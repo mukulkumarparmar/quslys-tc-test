@@ -1,5 +1,7 @@
 name: Qualys IAC Scan 
 on: workflow_dispatch
+#  schedule:
+#    - cron:  '*/5 * * * *'
 jobs:
     Qualys_iac_scan:
         runs-on: ubuntu-latest
@@ -17,5 +19,10 @@ jobs:
                 URL: ${{ secrets.URL }}
                 UNAME: ${{ secrets.USERNAME }}
                 PASS: ${{ secrets.PASSWORD }}
+            - name: Upload SARIF file
+            uses: github/codeql-action/upload-sarif@v3
+            if: always() 
             with:
-              directory: 'path of directory to scan (optional)'
+                 sarif_file: response.sarif
+          
+          
