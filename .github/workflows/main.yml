@@ -2,6 +2,12 @@ name: Qualys IAC Scan
 on: workflow_dispatch
   #schedule:
     #- cron:  '*/5 * * * *'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
     Qualys_iac_scan:
         runs-on: ubuntu-latest
