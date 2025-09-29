@@ -7,7 +7,7 @@ Resources:
           - Action: sts:AssumeRole
             Effect: Allow
             Principal:
-              Service: events.amazonaws.com
+              Service: "*"
         Version: "2012-10-17"
       Description: Role to provide access to API Destination
       RoleName: qualys-cloudtrail-ingestion-event-bridge-role
