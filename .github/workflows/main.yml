@@ -3,10 +3,10 @@ on: workflow_dispatch
   #schedule:
     #- cron:  '*/5 * * * *'
 
-#permissions:
- # contents: read
-  #security-events: write
-  #actions: read
+permissions:
+  contents: read
+  security-events: write
+  actions: read
 
 jobs:
     Qualys_iac_scan:
