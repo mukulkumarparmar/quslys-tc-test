@@ -33,3 +33,11 @@ jobs:
             if: always() 
             with:
                  sarif_file: response.sarif
+
+        # Upload SARIF as a downloadable artifact
+          - name: Upload SARIF file for download
+            uses: actions/upload-artifact@v3
+            if: always()
+            with:
+              name: qualys-iac-sarif
+              path: qualys_iac_scan_results.sarif
