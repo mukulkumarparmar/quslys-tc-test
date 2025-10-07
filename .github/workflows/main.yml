@@ -1,7 +1,9 @@
-name: Qualys IAC Scan 
-on: workflow_dispatch
-  #schedule:
-    #- cron:  '*/5 * * * *'
+name: Qualys IAC Scan
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '*/5 * * * *'
 
 permissions:
   contents: read
@@ -9,35 +11,51 @@ permissions:
   actions: read
 
 jobs:
-    Qualys_iac_scan:
-        runs-on: ubuntu-latest
-        name: Qualys IaC Scan
-        steps:
-          - name: Checkout
-            uses: actions/checkout@v2 
-            with:
-                fetch-depth: 0
-    
-          - name: Qualys IAC scan action step
-            uses: Qualys/github_action_qiac@main
-            id: qiac
-            env:
-                URL: ${{ secrets.URL }}
-                UNAME: ${{ secrets.USERNAME }}
-                PASS: ${{ secrets.PASSWORD }}
-            #with:
-              #directory: 'path of directory to scan (optional)'
-          
-          - name: Upload SARIF file
-            uses: github/codeql-action/upload-sarif@v3
-            if: always() 
-            with:
-                 sarif_file: response.sarif
+  Qualys_iac_scan:
+    runs-on: ubuntu-latest
+    name: Qualys IaC Scan
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        # Upload SARIF as a downloadable artifact
-          - name: Upload SARIF file for download
-            uses: actions/upload-artifact@v4
-            if: always()
-            with:
-              name: qualys-iac-sarif
-              path: qualys_iac_scan_results.sarif
+      - name: Run Qualys IaC Scan
+        uses: Qualys/github_action_qiac@main
+        id: qiac
+        env:
+          URL: ${{ secrets.URL }}
+          UNAME: ${{ secrets.USERNAME }}
+          PASS: ${{ secrets.PASSWORD }}
+        # If you want to specify folder explicitly, uncomment below:
+        # with:
+        #   directory: 'path of directory to scan (optional)'
+
+      # Debugging step — lists files to find actual SARIF file name and path
+      - name: List files in workspace after scan
+        run: |
+          echo "=== Files generated after Qualys IaC Scan ==="
+          ls -R ${{ github.workspace }}
+
+      # Upload SARIF to GitHub Security tab (Code Scanning)
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          # Handles both default and alternate SARIF filenames
+          sarif_file: |
+            qualys_iac_scan_results.sarif
+            response.sarif
+            ./output/response.sarif
+
+      # Upload SARIF as downloadable artifact (for manual inspection)
+      - name: Upload SARIF file for download
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qualys-iac-sarif
+          path: |
+            qualys_iac_scan_results.sarif
+            response.sarif
+            ./output/response.sarif
+          if-no-files-found: warn
