@@ -2,8 +2,6 @@ name: Qualys IAC Scan
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '*/5 * * * *'
 
 permissions:
   contents: read
@@ -27,35 +25,36 @@ jobs:
           URL: ${{ secrets.URL }}
           UNAME: ${{ secrets.USERNAME }}
           PASS: ${{ secrets.PASSWORD }}
-        # with:
-        #   directory: 'path of directory to scan (optional)'
+        with:
+          output_format: sarif           # 👈 forces SARIF output
+          output_file: response.sarif    # 👈 explicitly name SARIF file
+          # directory: 'path of directory to scan (optional)'
 
-      # 🔍 Detect SARIF file dynamically
-      - name: Find SARIF file
-        id: find_sarif
+      # 🔍 Verify and move SARIF file (if it exists)
+      - name: Move SARIF file to workspace
         run: |
-          echo "Searching for SARIF files in workspace..."
-          find ${{ github.workspace }} -type f -name "*.sarif" || true
-          file_path=$(find ${{ github.workspace }} -type f -name "*.sarif" | head -n 1)
+          echo "Searching for SARIF file..."
+          find /home/runner -type f -name "*.sarif" | tee /tmp/sarif_list.txt
+          file_path=$(head -n 1 /tmp/sarif_list.txt || true)
           if [ -z "$file_path" ]; then
-            echo "No SARIF file found!"
+            echo "❌ No SARIF file found!"
           else
-            echo "Found SARIF file at: $file_path"
-            echo "sarif_path=$file_path" >> $GITHUB_OUTPUT
+            echo "✅ Found SARIF file at: $file_path"
+            cp "$file_path" "${{ github.workspace }}/response.sarif"
           fi
 
-      # 🧠 Upload SARIF to GitHub Security tab (Code Scanning)
+      # 🧠 Upload to GitHub Security tab (Code Scanning Alerts)
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always() && steps.find_sarif.outputs.sarif_path != ''
+        if: always()
         with:
-          sarif_file: ${{ steps.find_sarif.outputs.sarif_path }}
+          sarif_file: ${{ github.workspace }}/response.sarif
 
-      # 💾 Upload SARIF as downloadable artifact
+      # 💾 Upload as downloadable artifact
       - name: Upload SARIF file for download
         uses: actions/upload-artifact@v4
-        if: always() && steps.find_sarif.outputs.sarif_path != ''
+        if: always()
         with:
           name: qualys-iac-sarif
-          path: ${{ steps.find_sarif.outputs.sarif_path }}
+          path: ${{ github.workspace }}/response.sarif
           if-no-files-found: warn
