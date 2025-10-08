@@ -27,35 +27,35 @@ jobs:
           URL: ${{ secrets.URL }}
           UNAME: ${{ secrets.USERNAME }}
           PASS: ${{ secrets.PASSWORD }}
-        # If you want to specify folder explicitly, uncomment below:
         # with:
         #   directory: 'path of directory to scan (optional)'
 
-      # Debugging step — lists files to find actual SARIF file name and path
-      - name: List files in workspace after scan
+      # 🔍 Detect SARIF file dynamically
+      - name: Find SARIF file
+        id: find_sarif
         run: |
-          echo "=== Files generated after Qualys IaC Scan ==="
-          ls -R ${{ github.workspace }}
+          echo "Searching for SARIF files in workspace..."
+          find ${{ github.workspace }} -type f -name "*.sarif" || true
+          file_path=$(find ${{ github.workspace }} -type f -name "*.sarif" | head -n 1)
+          if [ -z "$file_path" ]; then
+            echo "No SARIF file found!"
+          else
+            echo "Found SARIF file at: $file_path"
+            echo "sarif_path=$file_path" >> $GITHUB_OUTPUT
+          fi
 
-      # Upload SARIF to GitHub Security tab (Code Scanning)
+      # 🧠 Upload SARIF to GitHub Security tab (Code Scanning)
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && steps.find_sarif.outputs.sarif_path != ''
         with:
-          # Handles both default and alternate SARIF filenames
-          sarif_file: |
-            qualys_iac_scan_results.sarif
-            response.sarif
-            ./output/response.sarif
+          sarif_file: ${{ steps.find_sarif.outputs.sarif_path }}
 
-      # Upload SARIF as downloadable artifact (for manual inspection)
+      # 💾 Upload SARIF as downloadable artifact
       - name: Upload SARIF file for download
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.find_sarif.outputs.sarif_path != ''
         with:
           name: qualys-iac-sarif
-          path: |
-            qualys_iac_scan_results.sarif
-            response.sarif
-            ./output/response.sarif
+          path: ${{ steps.find_sarif.outputs.sarif_path }}
           if-no-files-found: warn
