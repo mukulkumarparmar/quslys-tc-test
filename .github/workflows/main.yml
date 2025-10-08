@@ -1,4 +1,4 @@
-name: Qualys IAC Scan
+name: Qualys IaC Scan
 
 on:
   workflow_dispatch:
@@ -14,13 +14,13 @@ jobs:
     name: Qualys IaC Scan
 
     steps:
-      # 1️⃣ Checkout the repo
+      # Step 1️⃣: Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ Run Qualys IaC Scan
+      # Step 2️⃣: Run Qualys IaC Scan
       - name: Run Qualys IaC Scan
         uses: Qualys/github_action_qiac@main
         id: qiac
@@ -28,32 +28,29 @@ jobs:
           URL: ${{ secrets.URL }}
           UNAME: ${{ secrets.USERNAME }}
           PASS: ${{ secrets.PASSWORD }}
-        # Optional: uncomment if your IaC code is in a subfolder
-        # with:
-        #   directory: 'iac/'
 
-      # 3️⃣ Find SARIF file dynamically
+      # Step 3️⃣: Locate SARIF file dynamically across runner (broader search)
       - name: Locate SARIF file
         id: find_sarif
         run: |
-          echo "Searching for SARIF files..."
-          FOUND_FILE=$(find ${{ github.workspace }} -type f -name "*.sarif" | head -n 1)
+          echo "Searching for SARIF file in runner..."
+          FOUND_FILE=$(find /home/runner -type f -name "*.sarif" | head -n 1)
           if [ -z "$FOUND_FILE" ]; then
-            echo "No SARIF file found!"
+            echo "SARIF file not found!"
             exit 1
           fi
-          echo "Found SARIF file at: $FOUND_FILE"
+          echo "✅ Found SARIF file at: $FOUND_FILE"
           echo "sarif_path=$FOUND_FILE" >> $GITHUB_OUTPUT
 
-      # 4️⃣ Upload to GitHub Security tab
+      # Step 4️⃣: Upload SARIF to GitHub Security tab (Code Scanning)
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: ${{ steps.find_sarif.outputs.sarif_path }}
 
-      # 5️⃣ Upload as downloadable artifact
-      - name: Upload SARIF artifact for download
+      # Step 5️⃣: Upload SARIF as downloadable artifact
+      - name: Upload SARIF file for download
         uses: actions/upload-artifact@v4
         if: always()
         with:
