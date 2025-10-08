@@ -37,17 +37,6 @@ jobs:
           echo "=== Files generated after Qualys IaC Scan ==="
           ls -R ${{ github.workspace }}
 
-      # Upload SARIF to GitHub Security tab (Code Scanning)
-      - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          # Handles both default and alternate SARIF filenames
-          sarif_file: |
-            qualys_iac_scan_results.sarif
-            response.sarif
-            ./output/response.sarif
-
       # Upload SARIF as downloadable artifact (for manual inspection)
       - name: Upload SARIF file for download
         uses: actions/upload-artifact@v4
