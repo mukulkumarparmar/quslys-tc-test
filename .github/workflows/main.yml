@@ -31,12 +31,6 @@ jobs:
         # with:
         #   directory: 'path of directory to scan (optional)'
 
-      # Debugging step — lists files to find actual SARIF file name and path
-      - name: List files in workspace after scan
-        run: |
-          echo "=== Files generated after Qualys IaC Scan ==="
-          ls -R ${{ github.workspace }}
-
       # Upload SARIF as downloadable artifact (for manual inspection)
       - name: Upload SARIF file for download
         uses: actions/upload-artifact@v4
